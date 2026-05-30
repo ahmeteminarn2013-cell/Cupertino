@@ -20,7 +20,7 @@ if [ -f "$GTK_CSS" ]; then
 fi
 
 # blur'u geri al: picom'u kapat, autostart'ı sil, XFCE compositing'i aç
-rm -f "$HOME/.config/autostart/nexus-picom.desktop"
+rm -f "$HOME/.config/autostart/cupertino-picom.desktop"
 pkill -x picom 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/use_compositing -s true 2>/dev/null || true
 echo ">> picom (blur) kapatıldı, XFCE compositing geri açıldı"
@@ -33,7 +33,7 @@ if [ -f "$HERE/backup/plank.desktop.bak" ]; then
 fi
 
 # Control Center daemon autostart'ını da kaldır (isteğe bağlı)
-rm -f "$HOME/.config/autostart/nexus-control-center.desktop"
+rm -f "$HOME/.config/autostart/cupertino-control-center.desktop"
 
 echo ">> Tam temizlik için ~/.profile ve ~/.xprofile içindeki 'appmenu-gtk-module' satırlarını elle silebilirsin."
 echo ">> Oturumu kapatıp açınca eski haline döner."

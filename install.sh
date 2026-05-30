@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-#  NexusDock — macOS masaüstü TEK KOMUT kurulumu (XFCE)
+#  Cupertino — macOS masaüstü TEK KOMUT kurulumu (XFCE)
 #  Kullanım:  ./install.sh
 #  Tekrar çalıştırılabilir (idempotent). XFCE gerektirir.
 # ============================================================
@@ -15,7 +15,7 @@ case "${XDG_CURRENT_DESKTOP:-}" in
   *XFCE*) ;;
   *) warn "Bu kurulum XFCE içindir (şu an: ${XDG_CURRENT_DESKTOP:-bilinmiyor}). Yine de devam ediliyor."; ;;
 esac
-say "NexusDock kurulumu başlıyor. sudo parolası istenebilir."
+say "Cupertino kurulumu başlıyor. sudo parolası istenebilir."
 sudo -v
 
 # ---------- 1) Paketler ----------
@@ -55,7 +55,7 @@ if ! find /usr/lib -name libdocklike.so 2>/dev/null | grep -q .; then
   git clone --depth=1 --branch xfce4-docklike-plugin-0.4.2 \
     https://gitlab.xfce.org/panel-plugins/xfce4-docklike-plugin.git "$bd/dl" >/dev/null 2>&1
   ( cd "$bd/dl"
-    patch -p1 < "$HERE/docklike-nexus.patch" >/dev/null
+    patch -p1 < "$HERE/docklike-cupertino.patch" >/dev/null
     ./autogen.sh --prefix=/usr >/dev/null 2>&1
     make -j2 >/dev/null 2>&1
     sudo make install >/dev/null 2>&1 )
@@ -90,7 +90,7 @@ previewSleep=200
 indicatorOrientation=0
 indicatorStyle=1
 inactiveIndicatorStyle=0
-pinned=thunar;firefox;google-chrome;thunderbird;xfce4-terminal;code;org.gnome.Rhythmbox3;xfce-settings-manager;nexus-ayar-merkezi;nexus-trash;
+pinned=thunar;firefox;google-chrome;thunderbird;xfce4-terminal;code;org.gnome.Rhythmbox3;xfce-settings-manager;cupertino-settings;cupertino-trash;
 EOF
 fi
 # dock görünüm: yuvarlak frosted + boyut
@@ -104,7 +104,7 @@ ok "Dock + önizleme + pinli uygulamalar"
 say "7/9  Trash + Ayar Merkezi kısayolları..."
 APPS="$HOME/.local/share/applications"; mkdir -p "$APPS"
 # Trash (Çöpü Boşalt action'lı, macOS ikonu)
-cat > "$APPS/nexus-trash.desktop" <<EOF
+cat > "$APPS/cupertino-trash.desktop" <<EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
@@ -122,11 +122,11 @@ Name[tr]=Çöpü Boşalt
 Exec=gio trash --empty
 EOF
 # Ayar Merkezi GUI
-cat > "$APPS/nexus-ayar-merkezi.desktop" <<EOF
+cat > "$APPS/cupertino-settings.desktop" <<EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=NexusDock Ayar Merkezi
+Name=Cupertino Ayar Merkezi
 Comment=macOS panel ve dock ayarları
 Exec=python3 "$HERE/control_panel.py"
 Icon=$HERE/assets/gear.svg
@@ -142,10 +142,10 @@ say "8/9  Buzlu cam (picom) + Control Center daemon..."
 # picom güvenli sarmalayıcı + autostart
 chmod +x "$HERE/picom-run.sh" 2>/dev/null || true
 AUTOSTART="$HOME/.config/autostart"; mkdir -p "$AUTOSTART"
-cat > "$AUTOSTART/nexus-picom.desktop" <<EOF
+cat > "$AUTOSTART/cupertino-picom.desktop" <<EOF
 [Desktop Entry]
 Type=Application
-Name=NexusDock picom (blur)
+Name=Cupertino picom (blur)
 Exec=$HERE/picom-run.sh
 Terminal=false
 X-GNOME-Autostart-enabled=true
@@ -170,10 +170,10 @@ ok "Panel + picom + dock çalışıyor"
 
 # ---------- BİTTİ ----------
 echo -e "\n\033[1;32m============================================\033[0m"
-echo -e "\033[1;32m  NexusDock kuruldu! 🍎\033[0m"
+echo -e "\033[1;32m  Cupertino kuruldu! 🍎\033[0m"
 echo -e "\033[1;32m============================================\033[0m"
 echo "  • Üst menü çubuğu + dock + blur + Control Center + Ayar Merkezi hazır"
 echo "  • Global menüler (File/Edit) için: ÇIKIŞ YAP / TEKRAR GİRİŞ"
-echo "  • Ayarlar: dock'taki ⚙️ ikonu (NexusDock Ayar Merkezi)"
+echo "  • Ayarlar: dock'taki ⚙️ ikonu (Cupertino Ayar Merkezi)"
 echo "  • Geri almak için: ./uninstall.sh"
 echo ""

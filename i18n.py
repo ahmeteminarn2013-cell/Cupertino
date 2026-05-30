@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""NexusDock — basit çoklu dil (i18n) modülü.
+"""Cupertino — basit çoklu dil (i18n) modülü.
 
 Sistem dilini (LANG / LC_MESSAGES) algılar, desteklenmeyen dilde İngilizce'ye düşer.
 Kullanım:
@@ -11,9 +11,9 @@ import os
 # Desteklenen diller: en, tr, es, de, fr, ru, pt, zh
 STRINGS = {
     # ---- Control Panel (Ayar Merkezi) ----
-    "app_title":    {"en": "NexusDock Settings", "tr": "NexusDock Ayar Merkezi", "es": "Ajustes de NexusDock",
-                     "de": "NexusDock-Einstellungen", "fr": "Réglages NexusDock", "ru": "Настройки NexusDock",
-                     "pt": "Configurações NexusDock", "zh": "NexusDock 设置"},
+    "app_title":    {"en": "Cupertino Settings", "tr": "Cupertino Ayar Merkezi", "es": "Ajustes de Cupertino",
+                     "de": "Cupertino-Einstellungen", "fr": "Réglages Cupertino", "ru": "Настройки Cupertino",
+                     "pt": "Configurações Cupertino", "zh": "Cupertino 设置"},
     "sec_top":      {"en": "Top Bar (Menu Bar)", "tr": "Üst Panel (Menü Çubuğu)", "es": "Barra superior (menú)",
                      "de": "Obere Leiste (Menüleiste)", "fr": "Barre supérieure (menu)", "ru": "Верхняя панель (меню)",
                      "pt": "Barra superior (menu)", "zh": "顶栏（菜单栏）"},

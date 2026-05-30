@@ -2,7 +2,7 @@
 # Control Center aç/kapat — panel butonu bunu çağırır.
 # Daemon RAM'de açıksa anında sinyal gönderir; değilse başlatıp gösterir.
 HERE="$(cd "$(dirname "$0")" && pwd)"
-PIDFILE="$HOME/.cache/nexus-cc.pid"
+PIDFILE="$HOME/.cache/cupertino-cc.pid"
 
 PID="$(cat "$PIDFILE" 2>/dev/null)"
 if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null; then

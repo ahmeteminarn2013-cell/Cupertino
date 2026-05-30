@@ -1,26 +1,26 @@
 #!/usr/bin/env bash
 # ============================================================
-#  NexusDock — geri alma (eski masaüstüne dönüş)
+#  Cupertino — geri alma (eski masaüstüne dönüş)
 # ============================================================
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 say() { echo -e "\n\033[1;36m>> $*\033[0m"; }
 
-say "NexusDock kaldırılıyor..."
+say "Cupertino kaldırılıyor..."
 
 # 1) picom (blur) kapat + autostart sil + XFCE compositing geri aç
-rm -f "$HOME/.config/autostart/nexus-picom.desktop"
+rm -f "$HOME/.config/autostart/cupertino-picom.desktop"
 pkill -x picom 2>/dev/null || true
 xfconf-query -c xfwm4 -p /general/use_compositing -s true 2>/dev/null || true
 echo "   ✓ picom kapatıldı, XFCE compositing geri açıldı"
 
 # 2) Control Center daemon kapat + autostart sil
-rm -f "$HOME/.config/autostart/nexus-control-center.desktop"
+rm -f "$HOME/.config/autostart/cupertino-control-center.desktop"
 for p in $(pgrep -f "control_center.py"); do kill "$p" 2>/dev/null; done
 echo "   ✓ Control Center daemon kapatıldı"
 
 # 3) Kısayolları sil
-rm -f "$HOME/.local/share/applications/nexus-trash.desktop"
-rm -f "$HOME/.local/share/applications/nexus-ayar-merkezi.desktop"
+rm -f "$HOME/.local/share/applications/cupertino-trash.desktop"
+rm -f "$HOME/.local/share/applications/cupertino-settings.desktop"
 echo "   ✓ Kısayollar silindi"
 
 # 4) Panel ayarını yedekten geri yükle (üst panel + dock kaldırılır)

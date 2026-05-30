@@ -1,7 +1,7 @@
 /* ============================================================
-   NexusDock — macOS menü çubuğu görünümü (üst XFCE panel)
+   Cupertino — macOS menü çubuğu görünümü (üst XFCE panel)
    Bu dosya ~/.config/gtk-3.0/gtk.css içine @import ile çekilir.
-   Sadece XFCE panelini etkiler; Plank ve NexusDock'a dokunmaz.
+   Sadece XFCE panelini etkiler; Plank ve Cupertino'a dokunmaz.
    ============================================================ */
 
 /* --- Panel gövdesi: ince, yarı saydam macOS menü çubuğu --- */

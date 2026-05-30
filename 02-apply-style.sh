@@ -10,8 +10,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # --- 1) Apple ikonu ---
 ICON_DST="$HOME/.local/share/icons"
 mkdir -p "$ICON_DST"
-cp "$HERE/assets/apple-white.svg" "$ICON_DST/nexus-apple.svg"
-APPLE_ICON="$ICON_DST/nexus-apple.svg"
+cp "$HERE/assets/apple-white.svg" "$ICON_DST/cupertino-apple.svg"
+APPLE_ICON="$ICON_DST/cupertino-apple.svg"
 echo ">> Apple ikonu: $APPLE_ICON"
 
 # --- 2) GTK CSS @import ---
@@ -54,7 +54,7 @@ write_env () {
     if ! grep -q "appmenu-gtk-module" "$f" 2>/dev/null; then
         {
             echo ''
-            echo '# NexusDock — macOS global menü'
+            echo '# Cupertino — macOS global menü'
             echo 'export GTK_MODULES="${GTK_MODULES:+$GTK_MODULES:}appmenu-gtk-module"'
             echo 'export UBUNTU_MENUPROXY=1'
         } >> "$f"

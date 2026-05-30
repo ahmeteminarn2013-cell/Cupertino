@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🍎 NexusDock
+# 🍎 Cupertino
 
 ### Turn your Linux Mint / Ubuntu **XFCE** desktop into **macOS** — with one command.
 ### XFCE masaüstünü tek komutla **macOS**'a çevir.
@@ -37,8 +37,8 @@
 ## 🚀 Install / Kurulum
 
 ```bash
-git clone https://github.com/<YOUR-USERNAME>/NexusDock.git
-cd NexusDock
+git clone https://github.com/<YOUR-USERNAME>/Cupertino.git
+cd Cupertino
 ./install.sh
 ```
 
@@ -49,7 +49,7 @@ docklike dock (compiled with magnification patch) → menu bar → blur → Cont
 Center → Settings GUI.
 
 ## 🎛️ Usage / Kullanım
-- **Settings:** click the ⚙️ icon in the dock (*NexusDock Settings*) — change everything live
+- **Settings:** click the ⚙️ icon in the dock (*Cupertino Settings*) — change everything live
 - **Control Center:** click the 🎚️ icon in the top bar
 - **Spotlight:** 🔍 in the top bar
 
@@ -63,7 +63,7 @@ Center → Settings GUI.
 `~/.config` and this folder:
 - XFCE panels (top menu bar + bottom dock) configured via `xfconf`
 - GTK CSS (`gtk-panel.css`) + `picom` for the glass look
-- `xfce4-docklike-plugin` 0.4.2 compiled from source with `docklike-nexus.patch`
+- `xfce4-docklike-plugin` 0.4.2 compiled from source with `docklike-cupertino.patch`
 - PySide6 apps for the Control Center & Settings
 
 ## ⚠️ Known limitations / Bilinen sınırlar
@@ -78,7 +78,7 @@ Built on [xfce4-docklike-plugin](https://gitlab.xfce.org/panel-plugins/xfce4-doc
 [picom](https://github.com/yshui/picom), and more — see [CREDITS.md](CREDITS.md).
 
 ## 📄 License / Lisans
-**GPL-3.0** — see [LICENSE](LICENSE). (Required: NexusDock builds on GPL components.)
+**GPL-3.0** — see [LICENSE](LICENSE). (Required: Cupertino builds on GPL components.)
 
 ---
 <div align="center">

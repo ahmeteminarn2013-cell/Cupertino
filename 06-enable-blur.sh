@@ -6,12 +6,12 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 xfconf-query -c xfwm4 -p /general/use_compositing -s false 2>/dev/null
 
 # 2) Login'de picom otomatik başlasın
-AUTO="$HOME/.config/autostart/nexus-picom.desktop"
+AUTO="$HOME/.config/autostart/cupertino-picom.desktop"
 mkdir -p "$(dirname "$AUTO")"
 cat > "$AUTO" <<EOF
 [Desktop Entry]
 Type=Application
-Name=NexusDock picom (blur)
+Name=Cupertino picom (blur)
 Comment=macOS buzlu cam derleyici
 Exec=picom --config "$HERE/picom.conf"
 Terminal=false

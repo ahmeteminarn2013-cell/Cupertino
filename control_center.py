@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""NexusDock Control Center — macOS Big Sur tarzı açılır kontrol merkezi.
+"""Cupertino Control Center — macOS Big Sur tarzı açılır kontrol merkezi.
 
 Üst panelden bir düğmeyle açılır. Gerçek sistem kontrolleri:
   - Wi-Fi    (nmcli radio wifi on/off)
@@ -458,7 +458,7 @@ QSlider::handle:horizontal {{
 """
 
 
-PIDFILE = Path.home() / ".cache" / "nexus-cc.pid"
+PIDFILE = Path.home() / ".cache" / "cupertino-cc.pid"
 
 
 def main():

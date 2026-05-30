@@ -14,6 +14,6 @@ sleep 1
 nohup xfce4-panel >/dev/null 2>&1 &
 disown
 sleep 2
-echo "daemon pid: $(cat "$HOME/.cache/nexus-cc.pid" 2>/dev/null)"
+echo "daemon pid: $(cat "$HOME/.cache/cupertino-cc.pid" 2>/dev/null)"
 echo "panel pid:  $(pgrep -x xfce4-panel)"
 echo "daemon sayısı: $(pgrep -f control_center.py | wc -l)"

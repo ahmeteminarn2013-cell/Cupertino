@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""NexusDock Ayar Merkezi — macOS panel + dock için GUI yönetim paneli.
+"""Cupertino Ayar Merkezi — macOS panel + dock için GUI yönetim paneli.
 
 Tek pencereden ayarlanır:
   Üst panel: transparanlık, yükseklik

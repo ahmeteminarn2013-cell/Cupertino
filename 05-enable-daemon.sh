@@ -15,12 +15,12 @@ if [ -f "$DESK" ]; then
 fi
 
 # 2) Login'de RAM'e önyükle
-AUTO="$HOME/.config/autostart/nexus-control-center.desktop"
+AUTO="$HOME/.config/autostart/cupertino-control-center.desktop"
 mkdir -p "$(dirname "$AUTO")"
 cat > "$AUTO" <<EOF
 [Desktop Entry]
 Type=Application
-Name=NexusDock Control Center (daemon)
+Name=Cupertino Control Center (daemon)
 Comment=Control Center'i RAM'de hazir tutar
 Exec=python3 "$HERE/control_center.py" --daemon
 Terminal=false
@@ -30,11 +30,11 @@ EOF
 echo ">> Autostart eklendi (login'de önyükleme)"
 
 # 3) Daemon'u şimdi başlat (varsa eskiyi kapat)
-OLD="$(cat "$HOME/.cache/nexus-cc.pid" 2>/dev/null || true)"
+OLD="$(cat "$HOME/.cache/cupertino-cc.pid" 2>/dev/null || true)"
 [ -n "$OLD" ] && kill "$OLD" 2>/dev/null || true
 sleep 0.3
 nohup python3 "$HERE/control_center.py" --daemon >/dev/null 2>&1 &
 disown
 sleep 1
-echo ">> Daemon başlatıldı pid=$(cat "$HOME/.cache/nexus-cc.pid" 2>/dev/null)"
+echo ">> Daemon başlatıldı pid=$(cat "$HOME/.cache/cupertino-cc.pid" 2>/dev/null)"
 echo ">> Artık Control Center butonu anında açılır."
