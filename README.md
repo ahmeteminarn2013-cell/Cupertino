@@ -37,7 +37,7 @@
 ## 🚀 Install / Kurulum
 
 ```bash
-git clone https://github.com/<YOUR-USERNAME>/Cupertino.git
+git clone https://github.com/ahmeteminarn2013-cell/Cupertino.git
 cd Cupertino
 ./install.sh
 ```
