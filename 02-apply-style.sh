@@ -33,12 +33,19 @@ xfconf-query -c xfce4-panel -p /plugins/plugin-1/show-button-icon  -t bool   -s 
 xfconf-query -c xfce4-panel -p /plugins/plugin-1/button-single-row -t bool   -s true  --create
 echo ">> Whisker düğmesi -> Apple"
 
-# --- 4) Panel: ince + cam (CSS'in görünmesi için background-style=none) ---
+# --- 4) Panel: ÜSTE taşı + ince + cam ---
+# ÖNEMLİ: panel-1'i üste, tam genişlik, yatay yapar (Mint XFCE'de varsayılan
+# panel ALTTA olabilir; menü çubuğunun üstte olması için zorla konumlandırıyoruz).
+xfconf-query -c xfce4-panel -p /panels/panel-1/mode            -t uint   -s 0    --create  # yatay
+xfconf-query -c xfce4-panel -p /panels/panel-1/length          -t double -s 100  --create  # tam genişlik
+xfconf-query -c xfce4-panel -p /panels/panel-1/length-adjust   -t bool   -s false --create
+xfconf-query -c xfce4-panel -p /panels/panel-1/position        -t string -s "p=6;x=960;y=0" --create  # üst-orta
+xfconf-query -c xfce4-panel -p /panels/panel-1/position-locked -t bool   -s true --create
 xfconf-query -c xfce4-panel -p /panels/panel-1/size            -t uint -s 26 --create
 xfconf-query -c xfce4-panel -p /panels/panel-1/icon-size       -t uint -s 16 --create
 xfconf-query -c xfce4-panel -p /panels/panel-1/background-style -t uint -s 0  --create
 xfconf-query -c xfce4-panel -p /panels/panel-1/enable-struts   -t bool -s true --create
-echo ">> Panel inceltildi (26px) + cam arka plan"
+echo ">> Panel üste taşındı + inceltildi (26px) + cam arka plan"
 
 # --- 5) Saat: macOS formatı  "Cum 30 May  14:32" ---
 xfconf-query -c xfce4-panel -p /plugins/plugin-13/mode                -t uint   -s 2 --create

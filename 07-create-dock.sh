@@ -20,6 +20,12 @@ echo ">> Plank kaldırıldı (yedek: backup/plank.desktop.bak)"
 # --- 2) panel-2'yi oluştur (alt dock) ---
 xfconf-query -c $CH -p /panels -t int -s 1 -t int -s 2   # panel listesi = [1,2]
 
+# Ekran boyutuna göre dock'u alt-ortaya konumla (her çözünürlükte çalışsın)
+RES="$(xrandr 2>/dev/null | awk '/\*/{print $1; exit}')"   # ör: 1920x1080
+SW="${RES%x*}"; SH="${RES#*x}"
+[ -z "$SW" ] && SW=1920; [ -z "$SH" ] && SH=1080
+CX=$((SW / 2)); DY=$((SH - 24))
+
 P=/panels/panel-2
 xfconf-query -c $CH -p $P/mode            -t uint   -s 0          --create  # yatay
 xfconf-query -c $CH -p $P/size            -t uint   -s 47         --create  # dock yüksekliği
@@ -30,7 +36,7 @@ xfconf-query -c $CH -p $P/length-adjust   -t bool   -s true       --create
 xfconf-query -c $CH -p $P/background-style -t uint  -s 0          --create  # CSS/blur görünsün
 xfconf-query -c $CH -p $P/enable-struts   -t bool   -s false      --create  # yüzen (pencereler altına girer)
 xfconf-query -c $CH -p $P/position-locked -t bool   -s true       --create
-xfconf-query -c $CH -p $P/position        -t string -s "p=12;x=960;y=1056" --create  # alt-orta
+xfconf-query -c $CH -p $P/position        -t string -s "p=12;x=$CX;y=$DY" --create  # alt-orta (dinamik)
 xfconf-query -c $CH -p $P/autohide-behavior -t uint -s 0          --create  # 0=hep görünür
 
 # --- 3) docklike eklentisi (plugin-30) ---
