@@ -1,0 +1,30 @@
+# Derleme / indirme çıktıları (installer bunları kendi üretir)
+build/
+dist/
+*.o
+*.lo
+*.la
+*.so
+
+# Kişisel yedekler ve anlık görüntüler
+backup/
+
+# Test ekran görüntüleri / loglar
+*.png
+*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.spec
+
+# Editör / sistem
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# docs görselleri dahil edilsin
+!docs/*.png

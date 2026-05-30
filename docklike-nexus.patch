@@ -1,0 +1,155 @@
+diff --git a/src/AppInfos.cpp b/src/AppInfos.cpp
+index 281d46d..7f16b70 100644
+--- a/src/AppInfos.cpp
++++ b/src/AppInfos.cpp
+@@ -25,6 +25,21 @@ void AppInfo::launch()
+ 	}
+ }
+ 
++void AppInfo::launch_uris(GList* uris)
++{
++	GDesktopAppInfo* info = g_desktop_app_info_new_from_filename(this->path.c_str());
++
++	if (info != nullptr)
++	{
++		GdkAppLaunchContext* context = gdk_display_get_app_launch_context(Plugin::mDisplay);
++
++		g_app_info_launch_uris(G_APP_INFO(info), uris, G_APP_LAUNCH_CONTEXT(context), nullptr);
++
++		g_object_unref(context);
++		g_object_unref(info);
++	}
++}
++
+ void AppInfo::launch_action(const gchar* action)
+ {
+ 	GDesktopAppInfo* info = g_desktop_app_info_new_from_filename(this->path.c_str());
+diff --git a/src/AppInfos.hpp b/src/AppInfos.hpp
+index 980c6a8..7a35a39 100644
+--- a/src/AppInfos.hpp
++++ b/src/AppInfos.hpp
+@@ -31,6 +31,7 @@ struct AppInfo
+ 	const gchar* const* get_actions() { return gAppInfo ? g_desktop_app_info_list_actions(gAppInfo.get()) : nullptr; };
+ 	void launch();
+ 	void launch_action(const gchar* action);
++	void launch_uris(GList* uris);
+ 	void edit();
+ };
+ 
+diff --git a/src/Group.cpp b/src/Group.cpp
+index a7d3083..b6f5462 100644
+--- a/src/Group.cpp
++++ b/src/Group.cpp
+@@ -7,7 +7,7 @@
+ 
+ #include "Group.hpp"
+ 
+-static GtkTargetEntry entries[1] = {{(gchar*)"application/docklike_group", 0, 0}};
++static GtkTargetEntry entries[2] = {{(gchar*)"application/docklike_group", 0, 0}, {(gchar*)"text/uri-list", 0, 1}};
+ static GtkTargetList* targetList = gtk_target_list_new(entries, 1);
+ 
+ Group::Group(std::shared_ptr<AppInfo> appInfo, bool pinned) : mGroupMenu(this)
+@@ -73,7 +73,7 @@ Group::Group(std::shared_ptr<AppInfo> appInfo, bool pinned) : mGroupMenu(this)
+ 
+ 	g_object_set_data(G_OBJECT(mButton), "group", this);
+ 	gtk_button_set_relief(GTK_BUTTON(mButton), GTK_RELIEF_NONE);
+-	gtk_drag_dest_set(mButton, GTK_DEST_DEFAULT_DROP, entries, 1, GDK_ACTION_MOVE);
++	gtk_drag_dest_set(mButton, (GtkDestDefaults)0, entries, 2, (GdkDragAction)(GDK_ACTION_MOVE | GDK_ACTION_COPY));
+ 	gtk_widget_add_events(mButton, GDK_SCROLL_MASK);
+ 
+ 	//--------------------------------------------------
+@@ -140,9 +140,18 @@ Group::Group(std::shared_ptr<AppInfo> appInfo, bool pinned) : mGroupMenu(this)
+ 		}),
+ 		this);
+ 
++	g_signal_connect(G_OBJECT(mButton), "drag-drop",
++		G_CALLBACK(+[](GtkWidget* widget, GdkDragContext* context, gint x, gint y, guint time, Group* me) -> gboolean {
++			GdkAtom target = gtk_drag_dest_find_target(widget, context, nullptr);
++			if (target != GDK_NONE) { gtk_drag_get_data(widget, context, target, time); return TRUE; }
++			return FALSE;
++		}),
++		this);
++
+ 	g_signal_connect(G_OBJECT(mButton), "enter-notify-event",
+ 		G_CALLBACK(+[](GtkWidget* widget, GdkEventCrossing* event, Group* me) {
+ 			Help::Gtk::cssClassAdd(me->mButton, "hover_group");
++			me->mHovered = true; me->resize();
+ 			me->mLeaveTimeout.stop();
+ 			me->mMenuShowTimeout.start();
+ 
+@@ -158,6 +167,7 @@ Group::Group(std::shared_ptr<AppInfo> appInfo, bool pinned) : mGroupMenu(this)
+ 	g_signal_connect(G_OBJECT(mButton), "leave-notify-event",
+ 		G_CALLBACK(+[](GtkWidget* widget, GdkEventCrossing* event, Group* me) {
+ 			Help::Gtk::cssClassRemove(me->mButton, "hover_group");
++			me->mHovered = false; me->resize();
+ 			me->mMenuShowTimeout.stop();
+ 
+ 			if (me->mPinned && !me->mWindowsCount)
+@@ -290,10 +300,11 @@ void Group::resize()
+ 	// TODO: set `min-width` / `min-height` CSS property on button?
+ 	// https://github.com/davekeogh/xfce4-docklike-plugin/issues/39
+ 	
++	gint iconSz = mHovered ? (gint)(Dock::mIconSize * 1.32) : Dock::mIconSize;
+ 	if (mIconPixbuf != nullptr)
+ 	{
+ 		gint scale_factor = gtk_widget_get_scale_factor(mButton);
+-		gint size = Dock::mIconSize * scale_factor;
++		gint size = iconSz * scale_factor;
+ 		GdkPixbuf* scaled = gdk_pixbuf_scale_simple(mIconPixbuf, size, size, GDK_INTERP_BILINEAR);
+ 		cairo_surface_t* surface = gdk_cairo_surface_create_from_pixbuf(scaled, scale_factor, NULL);
+ 		gtk_image_set_from_surface(GTK_IMAGE(mImage), surface);
+@@ -301,7 +312,7 @@ void Group::resize()
+ 		g_object_unref(scaled);
+ 	}
+ 	else
+-		gtk_image_set_pixel_size(GTK_IMAGE(mImage), Dock::mIconSize);
++		gtk_image_set_pixel_size(GTK_IMAGE(mImage), iconSz);
+ 
+ 	gtk_widget_set_valign(mImage, GTK_ALIGN_CENTER);
+ 	gtk_widget_queue_draw(mButton);
+@@ -900,9 +911,6 @@ bool Group::onDragMotion(GtkWidget* widget, GdkDragContext* context, int x, int
+ 			{
+ 				GroupWindow* groupWindow = mWindows.get(mTopWindowIndex);
+ 				groupWindow->activate(time);
+-
+-				if (!mGroupMenu.mVisible)
+-					onMouseEnter();
+ 			}
+ 
+ 			gdk_drag_status(context, GDK_ACTION_DEFAULT, time);
+@@ -927,7 +935,23 @@ void Group::onDragDataGet(const GdkDragContext* context, GtkSelectionData* selec
+ 
+ void Group::onDragDataReceived(const GdkDragContext* context, int x, int y, const GtkSelectionData* selectionData, guint info, guint time)
+ {
++	if (info == 1) // text/uri-list: dosya/klasoru bu uygulama ikonuna birak -> uygulamada ac
++	{
++		gchar** uris = gtk_selection_data_get_uris(selectionData);
++		if (uris != nullptr && mAppInfo != nullptr)
++		{
++			GList* list = nullptr;
++			for (int i = 0; uris[i] != nullptr; i++)
++				list = g_list_append(list, uris[i]);
++			mAppInfo->launch_uris(list);
++			g_list_free(list);
++			g_strfreev(uris);
++		}
++		gtk_drag_finish((GdkDragContext*)context, TRUE, FALSE, time);
++		return;
++	}
+ 	Dock::moveButton((Group*)gtk_selection_data_get_data(selectionData), this);
++	gtk_drag_finish((GdkDragContext*)context, TRUE, FALSE, time);
+ }
+ 
+ void Group::onDragBegin(GdkDragContext* context)
+diff --git a/src/Group.hpp b/src/Group.hpp
+index b984283..3bfb1eb 100644
+--- a/src/Group.hpp
++++ b/src/Group.hpp
+@@ -82,6 +82,7 @@ class Group
+ 
+ 	bool mPinned;
+ 	bool mActive;
++	bool mHovered = false;
+ 
+ 	uint mTolerablePointerDistance;
+ 	uint mTopWindowIndex;

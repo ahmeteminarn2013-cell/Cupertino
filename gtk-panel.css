@@ -1,0 +1,107 @@
+/* ============================================================
+   NexusDock — macOS menü çubuğu görünümü (üst XFCE panel)
+   Bu dosya ~/.config/gtk-3.0/gtk.css içine @import ile çekilir.
+   Sadece XFCE panelini etkiler; Plank ve NexusDock'a dokunmaz.
+   ============================================================ */
+
+/* --- Panel gövdesi: ince, yarı saydam macOS menü çubuğu --- */
+#XfcePanelWindow {
+    /* %15 ton — arkası picom ile buzlu cam (blur) gözükür */
+    background-color: rgba(28, 28, 32, 0.08);
+    box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+    border: none;
+    border-radius: 0;
+}
+
+/* Panel üzerindeki tüm metin/ikon rengi (macOS açık beyaz) */
+#XfcePanelWindow .label,
+#XfcePanelWindow label {
+    color: rgba(255, 255, 255, 0.92);
+    font-family: "SF Pro Text", "Inter", "Cantarell", "Noto Sans", sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+}
+
+/* --- Panel butonları: macOS menü öğesi hissi --- */
+#XfcePanelWindow button,
+#XfcePanelWindow .xfce4-panel-button {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 6px;
+    padding: 2px 7px;
+    margin: 2px 1px;
+    min-height: 0;
+    color: rgba(255, 255, 255, 0.92);
+}
+
+/* Hover: yumuşak mavi macOS vurgusu */
+#XfcePanelWindow button:hover,
+#XfcePanelWindow .xfce4-panel-button:hover {
+    background-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Aktif/basılı */
+#XfcePanelWindow button:active,
+#XfcePanelWindow button:checked,
+#XfcePanelWindow .xfce4-panel-button:checked {
+    background-color: rgba(10, 122, 255, 0.85);
+    color: #ffffff;
+}
+
+/* --- Apple (whisker) düğmesi: ekstra nefes payı --- */
+#XfcePanelWindow #whiskermenu-button {
+    padding: 1px 9px 1px 11px;
+}
+
+/* --- Global app menu (appmenu) çubuğu --- */
+#XfcePanelWindow .appmenu,
+#XfcePanelWindow menubar,
+#XfcePanelWindow menubar > menuitem {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.92);
+    font-weight: 600;
+    padding: 2px 8px;
+}
+#XfcePanelWindow menubar > menuitem:hover {
+    background-color: rgba(255, 255, 255, 0.16);
+    border-radius: 6px;
+}
+/* İlk menü öğesi (uygulama adı) macOS gibi kalın */
+#XfcePanelWindow menubar > menuitem:first-child label {
+    font-weight: 700;
+}
+
+/* --- Saat --- */
+#XfcePanelWindow .clock,
+#XfcePanelWindow #clock {
+    font-weight: 500;
+    padding: 0 8px;
+}
+
+/* --- Açılan menüler: macOS yuvarlak köşeli cam --- */
+menu, .menu, .context-menu {
+    background-color: rgba(40, 40, 44, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 10px;
+    padding: 5px;
+}
+menu menuitem, .menu menuitem {
+    border-radius: 6px;
+    padding: 4px 10px;
+    color: rgba(255, 255, 255, 0.92);
+}
+menu menuitem:hover, .menu menuitem:hover {
+    background-color: rgba(10, 122, 255, 0.92);
+    color: #ffffff;
+}
+
+/* --- Dock (docklike): kenar boşluğu + ikon aralığı (macOS dock hissi) --- */
+#docklike-plugin {
+    padding-left: 16px;
+    padding-right: 16px;
+}
+#docklike-plugin button.group {
+    margin: 0 3px;
+}
