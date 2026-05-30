@@ -335,8 +335,8 @@ class ControlCenter(QWidget):
         self.t_bt.toggled.connect(set_bt)
         self.t_dark = ToggleTile("moon.svg", t("darkmode"), dark_on())
         self.t_dark.toggled.connect(set_dark)
-        for t in (self.t_wifi, self.t_bt, self.t_dark):
-            cl.addWidget(t)
+        for tile in (self.t_wifi, self.t_bt, self.t_dark):
+            cl.addWidget(tile)
         s.addWidget(conn)
 
         # --- parlaklık ---
@@ -464,16 +464,17 @@ PIDFILE = Path.home() / ".cache" / "cupertino-cc.pid"
 def main():
     daemon = "--daemon" in sys.argv
 
+    # PID dosyasını ERKEN yaz (GUI kurulmadan önce) — cc-toggle hemen görsün
+    if daemon:
+        PIDFILE.parent.mkdir(parents=True, exist_ok=True)
+        PIDFILE.write_text(str(os.getpid()))
+
     app = QApplication([])
     app.setQuitOnLastWindowClosed(False)  # gizlenince çıkma
     app.setFont(QFont("SF Pro Text", 10))
     w = ControlCenter()
 
     if daemon:
-        # PID dosyası yaz (toggle scripti bunu kullanır)
-        PIDFILE.parent.mkdir(parents=True, exist_ok=True)
-        PIDFILE.write_text(str(os.getpid()))
-
         # SIGUSR1 = aç/kapat. Qt döngüsü C'de bloke olduğundan, sinyali
         # bir bayrakla yakalayıp periyodik timer'da işliyoruz.
         pending = {"toggle": False}
