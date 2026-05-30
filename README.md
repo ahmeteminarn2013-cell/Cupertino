@@ -36,7 +36,19 @@
 
 ## 🚀 Install / Kurulum
 
+### Option A — Easiest (no git needed) / En kolay (git gerekmez)
+Copy-paste **one line** into a terminal:
 ```bash
+curl -L https://github.com/ahmeteminarn2013-cell/Cupertino/archive/refs/heads/main.tar.gz | tar xz && cd Cupertino-main && ./install.sh
+```
+*(downloads, extracts, and installs — uses `curl` & `tar`, already on most systems)*
+
+Or via the website: green **Code** button → **Download ZIP** → extract → open the
+folder in a terminal → run `./install.sh`.
+
+### Option B — With git / git ile
+```bash
+sudo apt install -y git        # if you don't have git yet / git yoksa
 git clone https://github.com/ahmeteminarn2013-cell/Cupertino.git
 cd Cupertino
 ./install.sh
