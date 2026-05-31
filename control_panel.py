@@ -21,7 +21,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSlider, QFrame,
-    QGraphicsDropShadowEffect, QCheckBox, QScrollArea,
+    QGraphicsDropShadowEffect, QCheckBox, QScrollArea, QPushButton,
 )
 
 from i18n import t
@@ -56,17 +56,43 @@ def reload_picom() -> None:
     run_bg(["pkill", "-USR1", "-x", "picom"])
 
 
-# ---- GTK CSS (üst panel transparanlık) ----
+# ---- GTK CSS (üst panel: transparanlık + stil) ----
 def css_alpha_get() -> int:
-    m = re.search(r"background-color:\s*rgba\(28,\s*28,\s*32,\s*([0-9.]+)\)", CSS.read_text())
+    # ilk background-color rgba = #XfcePanelWindow (RGB ne olursa olsun)
+    m = re.search(r"background-color:\s*rgba\([^,]+,[^,]+,[^,]+,\s*([0-9.]+)\)", CSS.read_text())
     return int(float(m.group(1)) * 100) if m else 15
 
 
 def css_alpha_set(pct: int) -> None:
     txt = CSS.read_text()
-    txt = re.sub(r"(background-color:\s*rgba\(28,\s*28,\s*32,\s*)[0-9.]+(\))",
-                 rf"\g<1>{pct/100:.2f}\g<2>", txt)
+    txt = re.sub(r"(background-color:\s*rgba\([^,]+,[^,]+,[^,]+,\s*)[0-9.]+(\s*\))",
+                 rf"\g<1>{pct/100:.2f}\g<2>", txt, count=1)
     CSS.write_text(txt)
+
+
+# Menü çubuğu stil presetleri: arka plan + metin + blur + ikon teması
+STYLES = {
+    "frosted":     dict(bg=(28, 28, 32),    a=0.15, fg="rgba(255,255,255,0.92)", blur=True,  icon="WhiteSur-dark"),
+    "dark":        dict(bg=(22, 22, 24),    a=0.96, fg="rgba(255,255,255,0.92)", blur=False, icon="WhiteSur-dark"),
+    "light":       dict(bg=(246, 246, 248), a=0.97, fg="rgba(20,20,22,0.95)",    blur=False, icon="WhiteSur-light"),
+    "transparent": dict(bg=(28, 28, 32),    a=0.06, fg="rgba(255,255,255,0.92)", blur=False, icon="WhiteSur-dark"),
+}
+
+
+def menubar_style_set(name: str) -> None:
+    s = STYLES[name]
+    txt = CSS.read_text()
+    r, g, b = s["bg"]
+    # arka plan (ilk = #XfcePanelWindow)
+    txt = re.sub(r"background-color:\s*rgba\([^)]*\)",
+                 f"background-color: rgba({r}, {g}, {b}, {s['a']:.2f})", txt, count=1)
+    # metin rengi (ilk bağımsız color: = .label kuralı)
+    txt = re.sub(r"(\n\s+color:\s*)rgba\([^)]*\)", rf"\g<1>{s['fg']}", txt, count=1)
+    CSS.write_text(txt)
+    picom_set("blur-method", "dual_kawase" if s["blur"] else "none")
+    run_bg(["xfconf-query", "-c", "xsettings", "-p", "/Net/IconThemeName", "-s", s["icon"]])
+    reload_picom()
+    reload_panel()
 
 
 # ---- picom blur ----
@@ -243,6 +269,23 @@ class ControlPanel(QWidget):
 
         # ---- Üst panel ----
         c1 = Card(t("sec_top"))
+        # Stil seçici: Frosted / Dark / Light / Transparent (blur'suz = donma yok)
+        style_row = QWidget()
+        srl = QHBoxLayout(style_row)
+        srl.setContentsMargins(0, 0, 0, 0)
+        srl.setSpacing(6)
+        lab = QLabel(t("style"))
+        lab.setObjectName("rowLab")
+        lab.setFixedWidth(48)
+        srl.addWidget(lab)
+        for key, lbl in (("frosted", t("st_frosted")), ("dark", t("st_dark")),
+                         ("light", t("st_light")), ("transparent", t("st_transp"))):
+            btn = QPushButton(lbl)
+            btn.setObjectName("styleBtn")
+            btn.setCursor(Qt.PointingHandCursor)
+            btn.clicked.connect(lambda checked=False, k=key: self._style(k))
+            srl.addWidget(btn, 1)
+        c1.add(style_row)
         r = SliderRow(t("transparency"), 0, 100, css_alpha_get())
         r.released.connect(self._top_alpha)
         c1.add(r)
@@ -300,6 +343,10 @@ class ControlPanel(QWidget):
     def _flash(self, msg: str):
         self.status.setText("✓ " + msg)
 
+    def _style(self, name):
+        menubar_style_set(name)
+        self._flash(f"{t('style')}: {t('st_' + {'frosted':'frosted','dark':'dark','light':'light','transparent':'transp'}[name])}")
+
     # --- uygulayıcılar ---
     def _top_alpha(self, v):
         css_alpha_set(v); reload_panel(); self._flash(f"{t('transparency')} %{v}")
@@ -332,6 +379,10 @@ QWidget {{ background: transparent; color: #f0f0f2;
          border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; }}
 #cardCap {{ font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.85); }}
 #rowLab {{ font-size: 12px; color: rgba(255,255,255,0.9); }}
+#styleBtn {{ font-size: 11px; color: #f0f0f2; padding: 5px 4px;
+             background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.10);
+             border-radius: 8px; }}
+#styleBtn:hover {{ background: rgba(10,122,255,0.85); }}
 #rowVal {{ font-size: 11px; color: {ACCENT}; font-weight: 600; }}
 #status {{ font-size: 11px; color: rgba(255,255,255,0.55); padding-top: 4px; }}
 QScrollArea {{ background: transparent; border: none; }}
