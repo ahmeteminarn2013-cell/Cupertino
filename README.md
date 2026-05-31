@@ -11,9 +11,9 @@
 
 *A free & open-source alternative to MyDockFinder, built for XFCE.*
 
-</div>
+![Cupertino — macOS look for XFCE](docs/fullscreen.png)
 
-> 📸 _Add a screenshot here:_ `docs/screenshot.png`
+</div>
 
 ---
 
@@ -27,6 +27,14 @@
 - 🗑️ **Trash** in the dock (right-click → Empty Trash), macOS icon
 - 🔍 **Spotlight** launcher
 - 🌍 **8 languages** — EN, TR, ES, DE, FR, RU, PT, ZH (auto-detected)
+
+## 📸 Screenshots
+
+**Menu bar** — Apple menu + global app menu + status icons & clock
+![Menu bar](docs/menubar.png)
+
+**Dock** — rounded frosted glass, window previews, hover magnification
+![Dock](docs/dock.png)
 
 ## 📦 Requirements / Gereksinimler
 - **XFCE** desktop (Linux Mint XFCE, Xubuntu, or Ubuntu + XFCE session)
