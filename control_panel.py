@@ -73,8 +73,8 @@ def css_alpha_set(pct: int) -> None:
 # Menü çubuğu stil presetleri: arka plan + metin + blur + ikon teması
 STYLES = {
     "frosted":     dict(bg=(28, 28, 32),    a=0.15, fg="rgba(255,255,255,0.92)", blur=True,  icon="WhiteSur-dark"),
-    "dark":        dict(bg=(22, 22, 24),    a=0.96, fg="rgba(255,255,255,0.92)", blur=False, icon="WhiteSur-dark"),
-    "light":       dict(bg=(246, 246, 248), a=0.97, fg="rgba(20,20,22,0.95)",    blur=False, icon="WhiteSur-light"),
+    "dark":        dict(bg=(22, 22, 24),    a=1.00, fg="rgba(255,255,255,0.92)", blur=False, icon="WhiteSur-dark"),
+    "light":       dict(bg=(246, 246, 248), a=1.00, fg="rgba(20,20,22,0.95)",    blur=False, icon="WhiteSur-light"),
     "transparent": dict(bg=(28, 28, 32),    a=0.06, fg="rgba(255,255,255,0.92)", blur=False, icon="WhiteSur-dark"),
 }
 
@@ -89,6 +89,10 @@ def menubar_style_set(name: str) -> None:
     # metin rengi (ilk bağımsız color: = .label kuralı)
     txt = re.sub(r"(\n\s+color:\s*)rgba\([^)]*\)", rf"\g<1>{s['fg']}", txt, count=1)
     CSS.write_text(txt)
+    # Panel hover'da saydamlaşmasın (enter/leave opaklığı = 100)
+    for prop in ("enter-opacity", "leave-opacity"):
+        run_bg(["xfconf-query", "-c", "xfce4-panel", "-p", f"/panels/panel-1/{prop}",
+                "-t", "uint", "-s", "100"])
     picom_set("blur-method", "dual_kawase" if s["blur"] else "none")
     run_bg(["xfconf-query", "-c", "xsettings", "-p", "/Net/IconThemeName", "-s", s["icon"]])
     reload_picom()
