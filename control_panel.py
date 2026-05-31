@@ -89,10 +89,22 @@ def menubar_style_set(name: str) -> None:
     # metin rengi (ilk bağımsız color: = .label kuralı)
     txt = re.sub(r"(\n\s+color:\s*)rgba\([^)]*\)", rf"\g<1>{s['fg']}", txt, count=1)
     CSS.write_text(txt)
-    # Panel hover'da saydamlaşmasın (enter/leave opaklığı = 100)
-    for prop in ("enter-opacity", "leave-opacity"):
+    # Panel opaklığı: enter/leave + background-alpha = 100 (XFCE'nin 95 varsayılanı
+    # solid modda %5 arka plan sızdırıyordu).
+    for prop in ("enter-opacity", "leave-opacity", "background-alpha"):
         run_bg(["xfconf-query", "-c", "xfce4-panel", "-p", f"/panels/panel-1/{prop}",
-                "-t", "uint", "-s", "100"])
+                "-t", "uint", "-s", "100", "--create"])
+    # ZORLA opaklık: solid stillerde panel kendi arka planını çizsin (CSS yetmiyor,
+    # XFCE background-style=0/None şeffaf bırakıyor). 1=solid renk.
+    if s["a"] >= 0.99:
+        run_bg(["xfconf-query", "-c", "xfce4-panel", "-p", "/panels/panel-1/background-style",
+                "-t", "uint", "-s", "1", "--create"])
+        run_bg(["xfconf-query", "-c", "xfce4-panel", "-p", "/panels/panel-1/background-rgba",
+                "-t", "double", "-s", f"{r/255:.4f}", "-t", "double", "-s", f"{g/255:.4f}",
+                "-t", "double", "-s", f"{b/255:.4f}", "-t", "double", "-s", "1.0", "--create"])
+    else:
+        run_bg(["xfconf-query", "-c", "xfce4-panel", "-p", "/panels/panel-1/background-style",
+                "-t", "uint", "-s", "0", "--create"])  # None → CSS + blur görünür
     picom_set("blur-method", "dual_kawase" if s["blur"] else "none")
     run_bg(["xfconf-query", "-c", "xsettings", "-p", "/Net/IconThemeName", "-s", s["icon"]])
     reload_picom()
