@@ -71,11 +71,15 @@ def css_alpha_set(pct: int) -> None:
 
 
 # Menü çubuğu stil presetleri: arka plan + metin + blur + ikon teması
+# comp: hangi compositor —
+#   "off"   = compositor yok (TAM solid, sıfır donma; zayıf GPU için ideal)
+#   "xfwm"  = XFCE compositing (hafif saydamlık, blur yok)
+#   "picom" = picom (blur / buzlu cam)
 STYLES = {
-    "frosted":     dict(bg=(28, 28, 32),    a=0.15, fg="rgba(255,255,255,0.92)", blur=True,  icon="WhiteSur-dark"),
-    "dark":        dict(bg=(22, 22, 24),    a=1.00, fg="rgba(255,255,255,0.92)", blur=False, icon="WhiteSur-dark"),
-    "light":       dict(bg=(246, 246, 248), a=1.00, fg="rgba(20,20,22,0.95)",    blur=False, icon="WhiteSur-light"),
-    "transparent": dict(bg=(28, 28, 32),    a=0.06, fg="rgba(255,255,255,0.92)", blur=False, icon="WhiteSur-dark"),
+    "frosted":     dict(bg=(28, 28, 32),    a=0.15, fg="rgba(255,255,255,0.92)", comp="picom", icon="WhiteSur-dark"),
+    "dark":        dict(bg=(22, 22, 24),    a=1.00, fg="rgba(255,255,255,0.92)", comp="off",   icon="WhiteSur-dark"),
+    "light":       dict(bg=(246, 246, 248), a=1.00, fg="rgba(20,20,22,0.95)",    comp="off",   icon="WhiteSur-light"),
+    "transparent": dict(bg=(28, 28, 32),    a=0.15, fg="rgba(255,255,255,0.92)", comp="xfwm",  icon="WhiteSur-dark"),
 }
 
 
@@ -105,9 +109,24 @@ def menubar_style_set(name: str) -> None:
     else:
         run_bg(["xfconf-query", "-c", "xfce4-panel", "-p", "/panels/panel-1/background-style",
                 "-t", "uint", "-s", "0", "--create"])  # None → CSS + blur görünür
-    picom_set("blur-method", "dual_kawase" if s["blur"] else "none")
     run_bg(["xfconf-query", "-c", "xsettings", "-p", "/Net/IconThemeName", "-s", s["icon"]])
-    reload_picom()
+
+    # ---- Compositor durumu (stile göre) ----
+    comp = s["comp"]
+    if comp == "off":
+        # Compositor YOK → tam solid bar + sıfır donma (zayıf GPU için ideal)
+        run_bg(["pkill", "-x", "picom"])
+        run_bg(["xfconf-query", "-c", "xfwm4", "-p", "/general/use_compositing", "-s", "false"])
+    elif comp == "xfwm":
+        # Hafif XFCE compositing (saydamlık, blur yok)
+        run_bg(["pkill", "-x", "picom"])
+        run_bg(["xfconf-query", "-c", "xfwm4", "-p", "/general/use_compositing", "-s", "true"])
+    elif comp == "picom":
+        # picom (blur). xfwm compositing kapalı; picom-run.sh güvenli başlatır.
+        picom_set("blur-method", "dual_kawase")
+        run_bg(["xfconf-query", "-c", "xfwm4", "-p", "/general/use_compositing", "-s", "false"])
+        subprocess.Popen(["setsid", "-f", "bash", str(HERE / "picom-run.sh")],
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     reload_panel()
 
 
@@ -119,7 +138,10 @@ def picom_get(key: str, default):
 
 def picom_set(key: str, value) -> None:
     txt = PICOM.read_text()
-    txt = re.sub(rf"(^\s*{key}\s*=\s*)\"?[0-9a-z_.]+\"?(\s*;)", rf"\g<1>{value}\g<2>", txt, flags=re.M)
+    v = str(value)
+    if not re.fullmatch(r"[0-9.]+", v):   # sayı değilse string → picom tırnak ister
+        v = f'"{v}"'
+    txt = re.sub(rf'(^\s*{key}\s*=\s*)"?[0-9a-z_.]+"?(\s*;)', rf"\g<1>{v}\g<2>", txt, flags=re.M)
     PICOM.write_text(txt)
 
 
