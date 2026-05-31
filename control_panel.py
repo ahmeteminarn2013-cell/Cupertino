@@ -350,7 +350,7 @@ class ControlPanel(QWidget):
         r.released.connect(self._preview_scale)
         c2.add(r)
         sw2 = SwitchRow(t("autohide"), int(xfq_get("/panels/panel-2/autohide-behavior", 0)) != 0)
-        sw2.toggled.connect(lambda on: (xfq_set_uint("/panels/panel-2/autohide-behavior", 1 if on else 0),))
+        sw2.toggled.connect(self._autohide)
         c2.add(sw2)
         col.addWidget(c2)
 
@@ -380,6 +380,12 @@ class ControlPanel(QWidget):
 
     def _flash(self, msg: str):
         self.status.setText("✓ " + msg)
+
+    def _autohide(self, on):
+        # autohide + panel reload → dock konumu temiz okunur ((0,0) glitch'ini hafifletir)
+        xfq_set_uint("/panels/panel-2/autohide-behavior", 1 if on else 0)
+        reload_panel()
+        self._flash(f"{t('autohide')}: {t('on') if on else t('off')}")
 
     def _style(self, name):
         menubar_style_set(name)

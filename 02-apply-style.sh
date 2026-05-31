@@ -76,4 +76,3 @@ xfce4-panel -r >/dev/null 2>&1 || true
 echo ""
 echo ">> BİTTİ. Görünüm uygulandı."
 echo ">> Global menünün uygulamalarda çıkması için ÇIKIŞ YAPIP TEKRAR GİRİŞ yap."
-echo ">> Global menü eklentisini panele eklemek için: 03-add-appmenu.sh"

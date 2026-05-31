@@ -7,7 +7,7 @@
 /* --- Panel gövdesi: ince, yarı saydam macOS menü çubuğu --- */
 #XfcePanelWindow {
     /* %15 ton — arkası picom ile buzlu cam (blur) gözükür */
-    background-color: rgba(28, 28, 32, 0.15);
+    background-color: rgba(22, 22, 24, 1.00);
     box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.25);
     border: none;
     border-radius: 0;

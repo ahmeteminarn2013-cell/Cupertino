@@ -44,4 +44,4 @@ xfconf-query -c $CH -p /plugins/plugin-30 -t string -s "docklike" --create
 xfconf-query -c $CH -p /panels/panel-2/plugin-ids -t int -s 30 --create --force-array
 
 echo ">> panel-2 (dock) + docklike eklendi"
-echo ">> Paneli yeniden başlat: bash start-panel.sh  (veya restart-panel.sh)"
+echo ">> Paneli yeniden başlat: bash start-panel.sh"

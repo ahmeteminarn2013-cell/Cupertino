@@ -23,7 +23,7 @@ say "1/9  Paketler kuruluyor (appmenu, picom, playerctl, build araçları)..."
 sudo apt-get update -qq || true
 sudo apt-get install -y \
   xfce4-appmenu-plugin appmenu-gtk2-module appmenu-gtk3-module appmenu-registrar \
-  picom playerctl xdotool git patch \
+  picom playerctl xdotool git patch xdg-utils \
   build-essential xfce4-dev-tools libxfce4panel-2.0-dev libxfce4ui-2-dev libgtk-3-dev \
   libwnck-3-dev libcairo2-dev gettext autopoint autoconf automake libtool intltool pkg-config \
   >/dev/null
@@ -80,6 +80,14 @@ say "6/9  Dock kuruluyor (Plank yerine)..."
 bash "$HERE/07-create-dock.sh" >/dev/null
 
 # docklike ayarları (önizleme, köşe, pinli uygulamalar + trash)
+# Pinli listeyi SADECE kurulu uygulamalardan oluştur (yoksa dock seyrek/bozuk görünür)
+PINS=""
+for app in thunar firefox google-chrome thunderbird xfce4-terminal code org.gnome.Rhythmbox3 xfce-settings-manager; do
+  if [ -f /usr/share/applications/"$app".desktop ] || [ -f "$HOME/.local/share/applications/$app.desktop" ]; then
+    PINS="${PINS}${app};"
+  fi
+done
+PINS="${PINS}cupertino-settings;cupertino-trash;"
 RC="$HOME/.config/xfce4/panel/docklike-30.rc"
 if [ ! -f "$RC" ]; then
   cat > "$RC" <<EOF
@@ -90,7 +98,7 @@ previewSleep=200
 indicatorOrientation=0
 indicatorStyle=1
 inactiveIndicatorStyle=0
-pinned=thunar;firefox;google-chrome;thunderbird;xfce4-terminal;code;org.gnome.Rhythmbox3;xfce-settings-manager;cupertino-settings;cupertino-trash;
+pinned=$PINS
 EOF
 fi
 # dock görünüm: yuvarlak frosted + boyut
@@ -110,7 +118,7 @@ Version=1.0
 Type=Application
 Name=Trash
 Name[tr]=Çöp Kutusu
-Exec=thunar trash:///
+Exec=xdg-open trash:///
 Icon=user-trash
 Terminal=false
 Actions=empty-trash;
