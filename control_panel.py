@@ -392,11 +392,21 @@ class ControlPanel(QWidget):
         self._flash(f"{t('style')}: {t('st_' + {'frosted':'frosted','dark':'dark','light':'light','transparent':'transp'}[name])}")
 
     # --- uygulayıcılar ---
+    def _picom_live(self) -> bool:
+        return bool(run(["pgrep", "-x", "picom"]))
+
+    def _flash_picom(self, msg: str):
+        # picom (blur compositor) çalışıyorsa uygula; değilse "Buzlu modunda geçerli" de
+        if self._picom_live():
+            reload_picom(); self._flash(msg)
+        else:
+            self._flash(f"{msg} — {t('needs_frosted')}")
+
     def _top_alpha(self, v):
         css_alpha_set(v); reload_panel(); self._flash(f"{t('transparency')} %{v}")
 
     def _corner(self, v):
-        corner_set(v); reload_picom(); self._flash(f"{t('corner')} {v}px")
+        corner_set(v); self._flash_picom(f"{t('corner')} {v}px")
 
     def _preview_on(self, on):
         dl_set("showPreviews", "true" if on else "false"); reload_panel()
@@ -406,11 +416,11 @@ class ControlPanel(QWidget):
         dl_set("previewScale", f"{v/100:.2f}"); reload_panel(); self._flash(f"{t('preview_size')} {v}")
 
     def _blur_on(self, on):
-        picom_set("blur-method", "dual_kawase" if on else "none"); reload_picom()
-        self._flash(f"{t('blur_on')}: {t('on') if on else t('off')}")
+        picom_set("blur-method", "dual_kawase" if on else "none")
+        self._flash_picom(f"{t('blur_on')}: {t('on') if on else t('off')}")
 
     def _blur_strength(self, v):
-        picom_set("blur-strength", v); reload_picom(); self._flash(f"{t('blur_strength')} {v}")
+        picom_set("blur-strength", v); self._flash_picom(f"{t('blur_strength')} {v}")
 
 
 STYLE = f"""
