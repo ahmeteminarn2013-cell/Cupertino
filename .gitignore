@@ -26,5 +26,6 @@ __pycache__/
 *~
 .DS_Store
 
-# docs görselleri dahil edilsin
+# docs görselleri dahil edilsin (alt klasörler — screenshots/ thumbnails/ — DAHİL)
 !docs/*.png
+!docs/**/*.png
