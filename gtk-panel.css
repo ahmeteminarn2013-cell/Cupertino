@@ -6,11 +6,24 @@
 
 /* --- Panel gövdesi: ince, yarı saydam macOS menü çubuğu --- */
 #XfcePanelWindow {
-    /* %15 ton — arkası picom ile buzlu cam (blur) gözükür */
-    background-color: rgba(28, 28, 32, 0.15);
-    box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+    /* Pencere arka planı XFCE'nin KENDİ background-style'ından gelir
+       (üst çubuk = solid renk, dock = yuvarlak saydam PNG). CSS burada
+       şeffaf kalır ki dock'un saydam köşeleri ezilmesin. */
+    background-color: transparent;
     border: none;
     border-radius: 0;
+}
+
+/* XFCE 4.18 panel arka plan resmini TILE (tekrar) yerine pencereye UZAT.
+   Panelin KENDİ kuralı (.xfce4-panel.background, PRIORITY_APPLICATION=600)
+   background-size/repeat belirtmediği için CSS varsayılanı repeat+auto = tile
+   → dock genişleyince sağda ikinci yuvarlak köşe çıkıyordu. gtk.css PRIORITY_USER
+   =800 ile yüklendiğinden bu kural panelinkini EZER. Sonuç: resim her zaman tam
+   pencereye oturur, ikinci köşe matematiksel olarak imkânsız. */
+.xfce4-panel.background {
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 /* Panel üzerindeki tüm metin/ikon rengi (macOS açık beyaz) */
@@ -80,27 +93,49 @@
     padding: 0 8px;
 }
 
-/* --- Açılan menüler: macOS yuvarlak köşeli cam --- */
+/* --- Açılan menüler: macOS yuvarlak köşeli cam (Elma menüsü + sağ-tık) --- */
+/* picom YOK; xfwm4 compositoru saydamlığı sağlar. Opak-ımsı koyu (okunur). */
 menu, .menu, .context-menu {
-    background-color: rgba(28, 28, 32, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.10);
+    background-color: rgba(34, 34, 38, 0.97);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 10px;
     padding: 5px;
 }
 menu menuitem, .menu menuitem {
     border-radius: 6px;
-    padding: 4px 10px;
+    padding: 5px 12px;
     color: rgba(255, 255, 255, 0.92);
 }
-menu menuitem:hover, .menu menuitem:hover {
-    background-color: rgba(28, 28, 32, 0.15);
+/* macOS seçim: mavi vurgu, beyaz metin */
+menu menuitem:hover, .menu menuitem:hover,
+menu menuitem:selected, .menu menuitem:selected {
+    background-color: rgba(10, 122, 255, 0.92);
     color: #ffffff;
 }
+menu separator, .menu separator {
+    background-color: rgba(255, 255, 255, 0.10);
+    min-height: 1px;
+    margin: 4px 8px;
+}
+
+/* CUPERTINO-NOTIFY-START — bildirimler macOS yuvarlak + hafif opak */
+#XfceNotifyWindow {
+    border-radius: 18px;
+    background-color: rgba(40, 40, 44, 0.92);
+    border: 1px solid rgba(255,255,255,0.10);
+    padding: 8px 10px;
+}
+#XfceNotifyWindow label#summary { font-weight: 700; }
+#XfceNotifyWindow label { color: rgba(255,255,255,0.92); }
+/* CUPERTINO-NOTIFY-END */
 
 /* --- Dock (docklike): kenar boşluğu + ikon aralığı (macOS dock hissi) --- */
+/* padding-bottom: dock'un ALTINDAKİ saydam boşluğu (state gap) telafi eder;
+   ikonları yuvarlak gövdenin içinde dikey ORTALAR (yoksa aşağı kayıyorlar). */
 #docklike-plugin {
     padding-left: 16px;
     padding-right: 16px;
+    padding-bottom: 10px;
 }
 #docklike-plugin button.group {
     margin: 0 3px;

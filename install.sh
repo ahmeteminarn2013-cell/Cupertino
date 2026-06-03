@@ -23,7 +23,8 @@ say "1/9  Paketler kuruluyor (appmenu, picom, playerctl, build araçları)..."
 sudo apt-get update -qq || true
 sudo apt-get install -y \
   xfce4-appmenu-plugin appmenu-gtk2-module appmenu-gtk3-module appmenu-registrar \
-  picom playerctl xdotool git patch xdg-utils \
+  picom playerctl xdotool wmctrl xdg-utils git patch \
+  brightnessctl python3-gi gir1.2-gtk-3.0 python3-pil pulseaudio-utils \
   build-essential xfce4-dev-tools libxfce4panel-2.0-dev libxfce4ui-2-dev libgtk-3-dev \
   libwnck-3-dev libcairo2-dev gettext autopoint autoconf automake libtool intltool pkg-config \
   >/dev/null
@@ -145,43 +146,27 @@ EOF
 update-desktop-database "$APPS" 2>/dev/null || true
 ok "Trash + Ayar Merkezi eklendi"
 
-# ---------- 8) Buzlu cam (picom) + Control Center daemon ----------
-say "8/9  Buzlu cam (picom) + Control Center daemon..."
-# picom güvenli sarmalayıcı + autostart
-chmod +x "$HERE/picom-run.sh" 2>/dev/null || true
-AUTOSTART="$HOME/.config/autostart"; mkdir -p "$AUTOSTART"
-cat > "$AUTOSTART/cupertino-picom.desktop" <<EOF
-[Desktop Entry]
-Type=Application
-Name=Cupertino picom (blur)
-Exec=$HERE/picom-run.sh
-Terminal=false
-X-GNOME-Autostart-enabled=true
-EOF
-# Control Center daemon (RAM'de hazır)
-bash "$HERE/05-enable-daemon.sh" >/dev/null 2>&1 || true
-ok "Blur + Control Center kuruldu"
+# ---------- 8) Cupertino v2: Elma menüsü · Spotlight · OSD · bildirimler · no-picom dock ----------
+say "8/9  Cupertino v2 özellikleri (Elma menüsü, Spotlight, OSD, macOS bildirimler)..."
+chmod +x "$HERE"/*.sh "$HERE"/*.py 2>/dev/null || true
+bash "$HERE/08-cupertino-v2.sh"
+ok "v2 özellikleri + 5 daemon (Control Center, Elma, OSD, Spotlight, dock-watcher)"
 
-# ---------- 9) Başlat ----------
-say "9/9  Servisler başlatılıyor..."
-# XFCE compositing kapat, picom başlat (güvenli sarmalayıcı)
-pkill -x picom 2>/dev/null || true
-sleep 0.5
-setsid -f bash "$HERE/picom-run.sh" >/dev/null 2>&1 < /dev/null || true
-sleep 1
-# paneli temiz yeniden başlat
+# ---------- 9) Panel'i temiz başlat ----------
+say "9/9  Panel başlatılıyor..."
 for p in $(pgrep -x xfce4-panel); do kill "$p" 2>/dev/null; done
 sleep 1.5
 nohup xfce4-panel >/dev/null 2>&1 & disown
 sleep 2
-ok "Panel + picom + dock çalışıyor"
+ok "Panel + no-picom yuvarlak dock çalışıyor"
 
 # ---------- BİTTİ ----------
 echo -e "\n\033[1;32m============================================\033[0m"
-echo -e "\033[1;32m  Cupertino kuruldu! 🍎\033[0m"
+echo -e "\033[1;32m  Cupertino v2 kuruldu! 🍎\033[0m"
 echo -e "\033[1;32m============================================\033[0m"
-echo "  • Üst menü çubuğu + dock + blur + Control Center + Ayar Merkezi hazır"
+echo "  • Menü çubuğu + yuvarlak dock + Elma menüsü + Spotlight + OSD + bildirimler"
+echo "  • 🍎 Elma logosu → macOS menüsü  ·  ⌘(Win)+Space → Spotlight  ·  🔍 buton da açar"
+echo "  • Ses/parlaklık tuşları → macOS OSD  ·  Control Center: çubuktaki toggle ikonu"
 echo "  • Global menüler (File/Edit) için: ÇIKIŞ YAP / TEKRAR GİRİŞ"
-echo "  • Ayarlar: dock'taki ⚙️ ikonu (Cupertino Ayar Merkezi)"
-echo "  • Geri almak için: ./uninstall.sh"
+echo "  • Ayarlar: dock'taki ⚙️  ·  Dock boşluğu: ./set-gap.sh 12  ·  Geri al: ./uninstall.sh"
 echo ""

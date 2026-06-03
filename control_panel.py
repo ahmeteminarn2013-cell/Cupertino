@@ -17,7 +17,7 @@ import re
 import subprocess
 from pathlib import Path
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSlider, QFrame,
@@ -29,7 +29,11 @@ from i18n import t
 HERE = Path(__file__).resolve().parent
 CSS = HERE / "gtk-panel.css"
 PICOM = HERE / "picom.conf"
+GEN = HERE / "gen-dock-bg.py"
+DOCK_IMG = HERE / "assets" / "dock-bg.png"
+BAR_IMG = HERE / "assets" / "bar-bg.png"
 DOCKLIKE_RC = Path.home() / ".config" / "xfce4" / "panel" / "docklike-30.rc"
+STATE = Path.home() / ".config" / "cupertino" / "state.ini"
 ACCENT = "#0a84ff"
 
 
@@ -56,77 +60,148 @@ def reload_picom() -> None:
     run_bg(["pkill", "-USR1", "-x", "picom"])
 
 
-# ---- GTK CSS (üst panel: transparanlık + stil) ----
-def css_alpha_get() -> int:
-    # ilk background-color rgba = #XfcePanelWindow (RGB ne olursa olsun)
-    m = re.search(r"background-color:\s*rgba\([^,]+,[^,]+,[^,]+,\s*([0-9.]+)\)", CSS.read_text())
-    return int(float(m.group(1)) * 100) if m else 15
+# ----------------------------- durum (state.ini) -----------------------------
+def _state() -> configparser.ConfigParser:
+    cp = configparser.ConfigParser()
+    cp.optionxform = str
+    if STATE.exists():
+        cp.read(STATE)
+    if not cp.has_section("ui"):
+        cp.add_section("ui")
+    return cp
 
 
-def css_alpha_set(pct: int) -> None:
-    txt = CSS.read_text()
-    txt = re.sub(r"(background-color:\s*rgba\([^,]+,[^,]+,[^,]+,\s*)[0-9.]+(\s*\))",
-                 rf"\g<1>{pct/100:.2f}\g<2>", txt, count=1)
-    CSS.write_text(txt)
+def state_get(key: str, default) -> str:
+    return _state().get("ui", key, fallback=str(default))
 
 
-# Menü çubuğu stil presetleri: arka plan + metin + blur + ikon teması
-# comp: hangi compositor —
-#   "off"   = compositor yok (TAM solid, sıfır donma; zayıf GPU için ideal)
-#   "xfwm"  = XFCE compositing (hafif saydamlık, blur yok)
-#   "picom" = picom (blur / buzlu cam)
+def state_set(key: str, value) -> None:
+    cp = _state()
+    cp.set("ui", key, str(value))
+    STATE.parent.mkdir(parents=True, exist_ok=True)
+    with open(STATE, "w") as f:
+        cp.write(f)
+
+
+# ----------------------------- tema presetleri -----------------------------
+# comp: "xfwm"  = XFCE'nin KENDİ compositoru (picom YOK) + resim arka plan
+#                 → yuvarlak saydam dock + solid çubuk; zayıf GPU'da bile temiz.
+#       "picom" = picom (buzlu cam / blur) — sadece isteyene seçenek.
+# dock_op: dock resminin opaklığı (0-1). bg: tema rengi. fg: metin rengi.
 STYLES = {
-    "frosted":     dict(bg=(28, 28, 32),    a=0.15, fg="rgba(255,255,255,0.92)", comp="picom", icon="WhiteSur-dark"),
-    "dark":        dict(bg=(22, 22, 24),    a=1.00, fg="rgba(255,255,255,0.92)", comp="off",   icon="WhiteSur-dark"),
-    "light":       dict(bg=(246, 246, 248), a=1.00, fg="rgba(20,20,22,0.95)",    comp="off",   icon="WhiteSur-light"),
-    "transparent": dict(bg=(28, 28, 32),    a=0.15, fg="rgba(255,255,255,0.92)", comp="xfwm",  icon="WhiteSur-dark"),
+    "frosted":     dict(bg=(28, 28, 32),    a=0.18, dock_op=0.55, fg="rgba(255,255,255,0.92)", comp="picom", icon="WhiteSur-dark"),
+    "dark":        dict(bg=(22, 22, 24),    a=1.00, dock_op=0.75, fg="rgba(255,255,255,0.92)", comp="xfwm",  icon="WhiteSur-dark"),
+    "light":       dict(bg=(246, 246, 248), a=1.00, dock_op=0.80, fg="rgba(20,20,22,0.95)",    comp="xfwm",  icon="WhiteSur-light"),
+    "transparent": dict(bg=(22, 22, 24),    a=1.00, dock_op=0.42, fg="rgba(255,255,255,0.92)", comp="xfwm",  icon="WhiteSur-dark"),
 }
 
 
+def theme_is_image() -> bool:
+    """Aktif tema resim-tabanlı mı (xfwm) yoksa picom/blur mu?"""
+    return STYLES.get(state_get("theme", "dark"), STYLES["dark"])["comp"] != "picom"
+
+
+# ----------------------------- GTK CSS yardımcıları -----------------------------
+def css_set_window_bg(value: str) -> None:
+    """#XfcePanelWindow arka planı (dosyadaki ilk background-color) = value."""
+    txt = CSS.read_text()
+    txt = re.sub(r"(background-color:\s*)[^;]+;", rf"\g<1>{value};", txt, count=1)
+    CSS.write_text(txt)
+
+
+def css_set_fg(fg: str) -> None:
+    txt = CSS.read_text()
+    txt = re.sub(r"(\n\s+color:\s*)rgba\([^)]*\)", rf"\g<1>{fg}", txt, count=1)
+    CSS.write_text(txt)
+
+
+def css_set_notify(dark: bool) -> None:
+    """Bildirim (xfce4-notifyd) CSS bloğunu temaya göre yeniden yaz + notifyd'yi tazele.
+    İşaretli blok (CUPERTINO-NOTIFY-START/END) tamamen değiştirilir."""
+    if dark:
+        bg, fg, bd = "rgba(40, 40, 44, 0.92)", "rgba(255,255,255,0.92)", "rgba(255,255,255,0.10)"
+    else:
+        bg, fg, bd = "rgba(245, 245, 247, 0.96)", "rgba(20,20,22,0.95)", "rgba(0,0,0,0.10)"
+    block = (
+        "/* CUPERTINO-NOTIFY-START — bildirimler macOS yuvarlak + hafif opak */\n"
+        "#XfceNotifyWindow {\n    border-radius: 18px;\n"
+        f"    background-color: {bg};\n"
+        f"    border: 1px solid {bd};\n    padding: 8px 10px;\n}}\n"
+        "#XfceNotifyWindow label#summary { font-weight: 700; }\n"
+        f"#XfceNotifyWindow label {{ color: {fg}; }}\n"
+        "/* CUPERTINO-NOTIFY-END */"
+    )
+    txt = CSS.read_text()
+    if "CUPERTINO-NOTIFY-START" in txt:
+        txt = re.sub(r"/\* CUPERTINO-NOTIFY-START.*?CUPERTINO-NOTIFY-END \*/", block, txt, flags=re.S)
+        CSS.write_text(txt)
+    run_bg(["pkill", "-x", "xfce4-notifyd"])   # yeni CSS'i okusun (sonraki bildirimde doğar)
+
+
+# ----------------------------- resim üretimi + uygulama -----------------------------
+def regen_images() -> None:
+    """Mevcut tema + slider değerleriyle dock-bg.png + bar-bg.png üret (senkron)."""
+    name = state_get("theme", "dark")
+    s = STYLES.get(name, STYLES["dark"])
+    r, g, b = s["bg"]
+    dock_op = int(state_get("dock_op", int(s["dock_op"] * 100)))
+    radius = int(state_get("radius", 22))
+    bar_a = int(state_get("bar_alpha", 100))
+    run(["python3", str(GEN), f"{dock_op/100:.2f}", str(radius),
+         f"{r},{g},{b}", f"{bar_a/100:.2f}"])
+
+
+def apply_images() -> None:
+    """panel-1 = bar resmi, panel-2 = dock resmi (background-style=2). Senkron ki
+    panel reload'dan ÖNCE yazılsın."""
+    run(["xfconf-query", "-c", "xfce4-panel", "-p", "/panels/panel-1/background-style", "-t", "uint", "-s", "2", "--create"])
+    run(["xfconf-query", "-c", "xfce4-panel", "-p", "/panels/panel-1/background-image", "-t", "string", "-s", str(BAR_IMG), "--create"])
+    run(["xfconf-query", "-c", "xfce4-panel", "-p", "/panels/panel-2/background-style", "-t", "uint", "-s", "2", "--create"])
+    run(["xfconf-query", "-c", "xfce4-panel", "-p", "/panels/panel-2/background-image", "-t", "string", "-s", str(DOCK_IMG), "--create"])
+
+
+def refresh_dock_bg() -> None:
+    """Slider değişince (köşe/opaklık/çubuk saydamlığı) resimleri tazele + uygula."""
+    regen_images()
+    apply_images()
+    reload_panel()
+
+
+# ----------------------------- tema uygula -----------------------------
 def menubar_style_set(name: str) -> None:
     s = STYLES[name]
-    txt = CSS.read_text()
     r, g, b = s["bg"]
-    # arka plan (ilk = #XfcePanelWindow)
-    txt = re.sub(r"background-color:\s*rgba\([^)]*\)",
-                 f"background-color: rgba({r}, {g}, {b}, {s['a']:.2f})", txt, count=1)
-    # metin rengi (ilk bağımsız color: = .label kuralı)
-    txt = re.sub(r"(\n\s+color:\s*)rgba\([^)]*\)", rf"\g<1>{s['fg']}", txt, count=1)
-    CSS.write_text(txt)
-    # Panel opaklığı: enter/leave + background-alpha = 100 (XFCE'nin 95 varsayılanı
-    # solid modda %5 arka plan sızdırıyordu).
-    for prop in ("enter-opacity", "leave-opacity", "background-alpha"):
-        run_bg(["xfconf-query", "-c", "xfce4-panel", "-p", f"/panels/panel-1/{prop}",
-                "-t", "uint", "-s", "100", "--create"])
-    # ZORLA opaklık: solid stillerde panel kendi arka planını çizsin (CSS yetmiyor,
-    # XFCE background-style=0/None şeffaf bırakıyor). 1=solid renk.
-    if s["a"] >= 0.99:
-        run_bg(["xfconf-query", "-c", "xfce4-panel", "-p", "/panels/panel-1/background-style",
-                "-t", "uint", "-s", "1", "--create"])
-        run_bg(["xfconf-query", "-c", "xfce4-panel", "-p", "/panels/panel-1/background-rgba",
-                "-t", "double", "-s", f"{r/255:.4f}", "-t", "double", "-s", f"{g/255:.4f}",
-                "-t", "double", "-s", f"{b/255:.4f}", "-t", "double", "-s", "1.0", "--create"])
-    else:
-        run_bg(["xfconf-query", "-c", "xfce4-panel", "-p", "/panels/panel-1/background-style",
-                "-t", "uint", "-s", "0", "--create"])  # None → CSS + blur görünür
+    state_set("theme", name)
+    state_set("dock_op", int(s["dock_op"] * 100))   # tema değişince dock opaklığını sıfırla
+    state_set("color", f"{r},{g},{b}")              # gen/watcher state'ten okusun
+    css_set_fg(s["fg"])
+    css_set_notify(name != "light")   # bildirimler de temaya uysun (açık/koyu)
     run_bg(["xfconf-query", "-c", "xsettings", "-p", "/Net/IconThemeName", "-s", s["icon"]])
+    # panel opaklık property'leri tam (compositor altında sızıntı olmasın)
+    for prop in ("enter-opacity", "leave-opacity", "background-alpha"):
+        for p in ("panel-1", "panel-2"):
+            run_bg(["xfconf-query", "-c", "xfce4-panel", "-p", f"/panels/{p}/{prop}",
+                    "-t", "uint", "-s", "100", "--create"])
 
-    # ---- Compositor durumu (stile göre) ----
-    comp = s["comp"]
-    if comp == "off":
-        # Compositor YOK → tam solid bar + sıfır donma (zayıf GPU için ideal)
-        run_bg(["pkill", "-x", "picom"])
-        run_bg(["xfconf-query", "-c", "xfwm4", "-p", "/general/use_compositing", "-s", "false"])
-    elif comp == "xfwm":
-        # Hafif XFCE compositing (saydamlık, blur yok)
-        run_bg(["pkill", "-x", "picom"])
-        run_bg(["xfconf-query", "-c", "xfwm4", "-p", "/general/use_compositing", "-s", "true"])
-    elif comp == "picom":
-        # picom (blur). xfwm compositing kapalı; picom-run.sh güvenli başlatır.
+    if s["comp"] == "picom":
+        # Buzlu cam (blur) — picom. CSS yarı saydam arka plan + picom blur'lar.
+        css_set_window_bg(f"rgba({r}, {g}, {b}, {s['a']:.2f})")
+        run(["xfconf-query", "-c", "xfce4-panel", "-p", "/panels/panel-1/background-style", "-t", "uint", "-s", "0", "--create"])
+        run(["xfconf-query", "-c", "xfce4-panel", "-p", "/panels/panel-2/background-style", "-t", "uint", "-s", "1", "--create"])
+        run(["xfconf-query", "-c", "xfce4-panel", "-p", "/panels/panel-2/background-rgba",
+             "-t", "double", "-s", "0.13", "-t", "double", "-s", "0.13",
+             "-t", "double", "-s", "0.16", "-t", "double", "-s", f"{s['dock_op']:.2f}", "--create"])
         picom_set("blur-method", "dual_kawase")
         run_bg(["xfconf-query", "-c", "xfwm4", "-p", "/general/use_compositing", "-s", "false"])
         subprocess.Popen(["setsid", "-f", "bash", str(HERE / "picom-run.sh")],
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    else:
+        # KOYU / AÇIK / ŞEFFAF — xfwm4 yerleşik compositor + resim arka plan (picom YOK)
+        css_set_window_bg("transparent")   # arka plan resimlerden gelsin
+        run_bg(["pkill", "-x", "picom"])
+        run(["xfconf-query", "-c", "xfwm4", "-p", "/general/use_compositing", "-s", "true"])
+        regen_images()
+        apply_images()
     reload_panel()
 
 
@@ -157,8 +232,7 @@ def blur_on_get() -> bool:
 
 
 def corner_get() -> int:
-    m = re.search(r'^\s*corner-radius\s*=\s*(\d+)', PICOM.read_text(), re.M)
-    return int(m.group(1)) if m else 22
+    return int(state_get("radius", 22))
 
 
 def corner_set(r: int) -> None:
@@ -181,19 +255,18 @@ def xfq_set_uint(path: str, val: int) -> None:
 
 
 def dock_alpha_get() -> int:
-    out = run(["xfconf-query", "-c", "xfce4-panel", "-p", "/panels/panel-2/background-rgba"])
-    vals = [v for v in out.splitlines() if v.strip()]
-    try:
-        return int(float(vals[-1].replace(",", ".")) * 100)
-    except Exception:
-        return 58
+    return int(state_get("dock_op", 75))
 
 
 def dock_alpha_set(pct: int) -> None:
-    a = pct / 100
-    run_bg(["xfconf-query", "-c", "xfce4-panel", "-p", "/panels/panel-2/background-rgba",
-            "-t", "double", "-s", "0.13", "-t", "double", "-s", "0.13",
-            "-t", "double", "-s", "0.16", "-t", "double", "-s", f"{a:.2f}"])
+    """Dock opaklığı: resim modunda dock-bg.png'yi tazele; picom modunda rgba."""
+    state_set("dock_op", pct)
+    if theme_is_image():
+        refresh_dock_bg()
+    else:
+        run_bg(["xfconf-query", "-c", "xfce4-panel", "-p", "/panels/panel-2/background-rgba",
+                "-t", "double", "-s", "0.13", "-t", "double", "-s", "0.13",
+                "-t", "double", "-s", "0.16", "-t", "double", "-s", f"{pct/100:.2f}"])
 
 
 # ---- docklike rc ----
@@ -324,7 +397,7 @@ class ControlPanel(QWidget):
             btn.clicked.connect(lambda checked=False, k=key: self._style(k))
             srl.addWidget(btn, 1)
         c1.add(style_row)
-        r = SliderRow(t("transparency"), 0, 100, css_alpha_get())
+        r = SliderRow(t("transparency"), 0, 100, int(state_get("bar_alpha", 100)))
         r.released.connect(self._top_alpha)
         c1.add(r)
         r = SliderRow(t("height"), 20, 44, int(xfq_get("/panels/panel-1/size", 26)), "px")
@@ -338,7 +411,7 @@ class ControlPanel(QWidget):
         r.released.connect(lambda v: dock_alpha_set(v))
         c2.add(r)
         r = SliderRow(t("dock_size"), 40, 96, int(xfq_get("/panels/panel-2/size", 64)), "px")
-        r.released.connect(lambda v: xfq_set_uint("/panels/panel-2/size", v))
+        r.released.connect(self._dock_size)
         c2.add(r)
         r = SliderRow(t("corner"), 0, 40, corner_get(), "px")
         r.released.connect(self._corner)
@@ -403,10 +476,30 @@ class ControlPanel(QWidget):
             self._flash(f"{msg} — {t('needs_frosted')}")
 
     def _top_alpha(self, v):
-        css_alpha_set(v); reload_panel(); self._flash(f"{t('transparency')} %{v}")
+        # üst çubuk saydamlığı: resim modunda bar-bg.png alfasını tazele; picom'da CSS
+        state_set("bar_alpha", v)
+        if theme_is_image():
+            refresh_dock_bg()
+        else:
+            s = STYLES[state_get("theme", "frosted")]
+            r, g, b = s["bg"]
+            css_set_window_bg(f"rgba({r}, {g}, {b}, {v/100:.2f})"); reload_panel()
+        self._flash(f"{t('transparency')} %{v}")
 
     def _corner(self, v):
-        corner_set(v); self._flash_picom(f"{t('corner')} {v}px")
+        # köşe yuvarlaklığı: resim modunda dock-bg.png yarıçapını tazele; picom'da corner-radius
+        state_set("radius", v)
+        if theme_is_image():
+            refresh_dock_bg(); self._flash(f"{t('corner')} {v}px")
+        else:
+            corner_set(v); self._flash_picom(f"{t('corner')} {v}px")
+
+    def _dock_size(self, v):
+        # dock yüksekliği değişti → resmi yeni boyutta yeniden üret (panel oturunca)
+        xfq_set_uint("/panels/panel-2/size", v); reload_panel()
+        if theme_is_image():
+            QTimer.singleShot(900, refresh_dock_bg)
+        self._flash(f"{t('dock_size')} {v}px")
 
     def _preview_on(self, on):
         dl_set("showPreviews", "true" if on else "false"); reload_panel()

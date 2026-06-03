@@ -24,7 +24,9 @@ xfconf-query -c $CH -p /panels -t int -s 1 -t int -s 2   # panel listesi = [1,2]
 RES="$(xrandr 2>/dev/null | awk '/\*/{print $1; exit}')"   # ör: 1920x1080
 SW="${RES%x*}"; SH="${RES#*x}"
 [ -z "$SW" ] && SW=1920; [ -z "$SH" ] && SH=1080
-CX=$((SW / 2)); DY=$((SH - 24))
+# DY: dock'un dikey konumu. SH-36 → alttan ~12px YUKARIDA (macOS gibi küçük boşluk).
+# (SH-24 tam dibe yapışıktı.) Boşluğu büyütmek için 36'yı artır.
+CX=$((SW / 2)); DY=$((SH - 36))
 
 P=/panels/panel-2
 xfconf-query -c $CH -p $P/mode            -t uint   -s 0          --create  # yatay

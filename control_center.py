@@ -461,6 +461,72 @@ QSlider::handle:horizontal {{
 PIDFILE = Path.home() / ".cache" / "cupertino-cc.pid"
 
 
+def _start_dock_watcher():
+    """Login'de dock yuvarlak-saydam arka plan izleyicisini başlat (picom YOK).
+    Resim-tabanlı temada dock genişliği değişince köşeleri tazeler. Watcher kendi
+    kopya-guard'ına sahip → tekrar çağırmak zararsız. Hata olsa bile CC'yi bozmaz."""
+    try:
+        watch = Path(__file__).resolve().parent / "dock-bg-watch.sh"
+        if watch.exists():
+            subprocess.Popen(["setsid", "-f", "bash", str(watch)],
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                             stdin=subprocess.DEVNULL)
+    except Exception:
+        pass
+
+
+def _start_apple_daemon():
+    """Login'de Elma menüsü daemon'ını RAM'e al → logoya tıklayınca ANINDA açılsın.
+    Zaten çalışıyorsa tekrar başlatma. Hata olsa bile CC'yi bozmaz."""
+    try:
+        pidf = Path.home() / ".cache" / "cupertino-apple.pid"
+        if pidf.exists():
+            pid = pidf.read_text().strip()
+            if pid and Path(f"/proc/{pid}").exists():
+                return   # zaten canlı
+        am = Path(__file__).resolve().parent / "apple-menu.py"
+        if am.exists():
+            subprocess.Popen(["setsid", "-f", sys.executable, str(am), "--daemon"],
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                             stdin=subprocess.DEVNULL)
+    except Exception:
+        pass
+
+
+def _start_osd_daemon():
+    """Login'de OSD daemon'ını RAM'e al → ses/parlaklık tuşunda anlık overlay."""
+    try:
+        pidf = Path.home() / ".cache" / "cupertino-osd.pid"
+        if pidf.exists():
+            pid = pidf.read_text().strip()
+            if pid and Path(f"/proc/{pid}").exists():
+                return
+        osd = Path(__file__).resolve().parent / "osd.py"
+        if osd.exists():
+            subprocess.Popen(["setsid", "-f", sys.executable, str(osd), "--daemon"],
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                             stdin=subprocess.DEVNULL)
+    except Exception:
+        pass
+
+
+def _start_spotlight_daemon():
+    """Login'de Spotlight daemon'ını RAM'e al → Super+Space ile anlık açılır."""
+    try:
+        pidf = Path.home() / ".cache" / "cupertino-spotlight.pid"
+        if pidf.exists():
+            pid = pidf.read_text().strip()
+            if pid and Path(f"/proc/{pid}").exists():
+                return
+        sp = Path(__file__).resolve().parent / "spotlight.py"
+        if sp.exists():
+            subprocess.Popen(["setsid", "-f", sys.executable, str(sp), "--daemon"],
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                             stdin=subprocess.DEVNULL)
+    except Exception:
+        pass
+
+
 def main():
     daemon = "--daemon" in sys.argv
 
@@ -468,6 +534,10 @@ def main():
     if daemon:
         PIDFILE.parent.mkdir(parents=True, exist_ok=True)
         PIDFILE.write_text(str(os.getpid()))
+        _start_dock_watcher()   # dock yuvarlak-saydam arka planı login'de izlenir (picom YOK)
+        _start_apple_daemon()   # Elma menüsü RAM'de hazır → anlık açılır
+        _start_osd_daemon()     # ses/parlaklık OSD'si RAM'de hazır
+        _start_spotlight_daemon()  # Spotlight RAM'de hazır (Super+Space)
 
     app = QApplication([])
     app.setQuitOnLastWindowClosed(False)  # gizlenince çıkma

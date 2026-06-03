@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 162" width="240" height="162">
+  <defs>
+    <linearGradient id="cup-scr" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5ab0ff"/>
+      <stop offset="0.55" stop-color="#1f8fff"/>
+      <stop offset="1" stop-color="#0a6cff"/>
+    </linearGradient>
+    <linearGradient id="cup-base" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e8eaee"/>
+      <stop offset="1" stop-color="#b6bcc4"/>
+    </linearGradient>
+    <linearGradient id="cup-lid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d9dde2"/>
+      <stop offset="1" stop-color="#c5cad1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ekran gövdesi (kapak) -->
+  <rect x="42" y="6" width="156" height="106" rx="10" fill="url(#cup-lid)"/>
+  <rect x="44" y="8" width="152" height="102" rx="9" fill="#1d1d20"/>
+  <!-- ekran -->
+  <rect x="50" y="14" width="140" height="90" rx="4" fill="url(#cup-scr)"/>
+  <!-- kamera çentiği -->
+  <rect x="114" y="8.5" width="12" height="3.2" rx="1.6" fill="#0c0c0e"/>
+  <!-- ekran parlama -->
+  <path d="M54 16 L120 16 L70 102 L54 102 Z" fill="#ffffff" opacity="0.10"/>
+
+  <!-- alt gövde (perspektifte açık taban) -->
+  <path d="M30 112 H210 L232 146 Q233 152 226 152 H14 Q7 152 8 146 Z" fill="url(#cup-base)"/>
+  <!-- menteşe çizgisi -->
+  <rect x="42" y="110" width="156" height="4" rx="2" fill="#a9afb8"/>
+  <!-- ön kenar gölge -->
+  <path d="M14 152 H226 Q231 152 231.6 148 H8.4 Q9 152 14 152 Z" fill="#9aa1ab" opacity="0.8"/>
+  <!-- trackpad çentiği -->
+  <path d="M104 146 H136 Q135 150 131 150 H109 Q105 150 104 146 Z" fill="#aeb4bd"/>
+</svg>
