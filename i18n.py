@@ -141,6 +141,19 @@ STRINGS = {
                      "pt": "Pesquisar “{}” na web", "zh": "在网络上搜索“{}”"},
     "sp_web_sub":   {"en": "Web Search", "tr": "Web Araması", "es": "Búsqueda web", "de": "Websuche",
                      "fr": "Recherche web", "ru": "Веб-поиск", "pt": "Busca na web", "zh": "网络搜索"},
+    # ---- Kilit ekranı / profil ----
+    "sec_lock":     {"en": "Lock Screen", "tr": "Kilit Ekranı", "es": "Pantalla de bloqueo",
+                     "de": "Sperrbildschirm", "fr": "Écran de verrouillage", "ru": "Экран блокировки",
+                     "pt": "Tela de bloqueio", "zh": "锁屏"},
+    "profile_name": {"en": "Name", "tr": "İsim", "es": "Nombre", "de": "Name", "fr": "Nom",
+                     "ru": "Имя", "pt": "Nome", "zh": "名称"},
+    "profile_photo":{"en": "Profile photo", "tr": "Profil fotoğrafı", "es": "Foto de perfil",
+                     "de": "Profilbild", "fr": "Photo de profil", "ru": "Фото профиля",
+                     "pt": "Foto de perfil", "zh": "头像"},
+    "choose":       {"en": "Choose…", "tr": "Seç…", "es": "Elegir…", "de": "Wählen…", "fr": "Choisir…",
+                     "ru": "Выбрать…", "pt": "Escolher…", "zh": "选择…"},
+    "saved":        {"en": "Saved", "tr": "Kaydedildi", "es": "Guardado", "de": "Gespeichert",
+                     "fr": "Enregistré", "ru": "Сохранено", "pt": "Salvo", "zh": "已保存"},
 }
 
 

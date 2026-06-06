@@ -13,7 +13,9 @@ ve canlı uygulanır (panel reload / picom SIGUSR1 / xfconf anında).
 from __future__ import annotations
 
 import configparser
+import os
 import re
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -21,7 +23,8 @@ from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSlider, QFrame,
-    QGraphicsDropShadowEffect, QCheckBox, QScrollArea, QPushButton,
+    QGraphicsDropShadowEffect, QCheckBox, QScrollArea, QPushButton, QLineEdit,
+    QFileDialog,
 )
 
 from i18n import t
@@ -291,6 +294,38 @@ def dl_set(key: str, value: str) -> None:
         cp.write(f, space_around_delimiters=False)
 
 
+# ---- Profil (kilit ekranı isim + foto) — AccountsService, kendi verin = sudo'suz ----
+def account_name() -> str:
+    try:
+        return run(["getent", "passwd", str(os.getuid())]).split(":")[4].split(",")[0]
+    except Exception:
+        return ""
+
+
+def acc_call(method: str, arg: str) -> None:
+    run(["gdbus", "call", "--system", "--dest", "org.freedesktop.Accounts",
+         "--object-path", f"/org/freedesktop/Accounts/User{os.getuid()}",
+         "--method", f"org.freedesktop.Accounts.User.{method}", arg])
+
+
+def set_avatar(src: str) -> None:
+    """Seçilen resmi kare kırp + 256px → kaydet, AccountsService ikonu yap (greeter okur)."""
+    dst = os.path.expanduser("~/.config/cupertino/avatar.png")
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
+    try:
+        from PIL import Image
+        im = Image.open(src).convert("RGB")
+        s = min(im.size); x = (im.width - s) // 2; y = (im.height - s) // 2
+        im.crop((x, y, x + s, y + s)).resize((256, 256), Image.LANCZOS).save(dst, "PNG")
+    except Exception:
+        shutil.copy(src, dst)
+    try:
+        shutil.copy(dst, os.path.expanduser("~/.face"))
+    except Exception:
+        pass
+    acc_call("SetIconFile", dst)
+
+
 # ----------------------------- UI -----------------------------
 class Card(QFrame):
     def __init__(self, title: str, parent=None):
@@ -437,6 +472,25 @@ class ControlPanel(QWidget):
         c3.add(r)
         col.addWidget(c3)
 
+        # ---- Kilit Ekranı / Profil (isim + foto — sudo'suz, anında greeter'a yansır) ----
+        c4 = Card(t("sec_lock"))
+        nrow = QWidget()
+        nl = QHBoxLayout(nrow); nl.setContentsMargins(0, 0, 0, 0); nl.setSpacing(10)
+        nlab = QLabel(t("profile_name")); nlab.setObjectName("rowLab"); nlab.setFixedWidth(130)
+        self.name_edit = QLineEdit(account_name()); self.name_edit.setObjectName("nameEdit")
+        self.name_edit.editingFinished.connect(self._set_name)
+        nl.addWidget(nlab); nl.addWidget(self.name_edit, 1)
+        c4.add(nrow)
+        prow = QWidget()
+        pl = QHBoxLayout(prow); pl.setContentsMargins(0, 0, 0, 0); pl.setSpacing(10)
+        plab = QLabel(t("profile_photo")); plab.setObjectName("rowLab"); plab.setFixedWidth(130)
+        pbtn = QPushButton(t("choose")); pbtn.setObjectName("styleBtn")
+        pbtn.setCursor(Qt.PointingHandCursor)
+        pbtn.clicked.connect(self._set_photo)
+        pl.addWidget(plab); pl.addWidget(pbtn, 1)
+        c4.add(prow)
+        col.addWidget(c4)
+
         col.addStretch(1)
         scroll.setWidget(body)
         sv.addWidget(scroll, 1)
@@ -515,6 +569,20 @@ class ControlPanel(QWidget):
     def _blur_strength(self, v):
         picom_set("blur-strength", v); self._flash_picom(f"{t('blur_strength')} {v}")
 
+    def _set_name(self):
+        n = self.name_edit.text().strip()
+        if n:
+            acc_call("SetRealName", n)
+            self._flash(f"{t('profile_name')}: {n} ✓")
+
+    def _set_photo(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self, t("profile_photo"), os.path.expanduser("~"),
+            "Resimler (*.png *.jpg *.jpeg *.webp *.bmp)")
+        if path:
+            set_avatar(path)
+            self._flash(f"{t('profile_photo')} ✓")
+
 
 STYLE = f"""
 QWidget {{ background: transparent; color: #f0f0f2;
@@ -530,6 +598,9 @@ QWidget {{ background: transparent; color: #f0f0f2;
              background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.10);
              border-radius: 8px; }}
 #styleBtn:hover {{ background: rgba(10,122,255,0.85); }}
+#nameEdit {{ background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.12);
+             border-radius: 8px; padding: 5px 10px; color: #f0f0f2; font-size: 12px; }}
+#nameEdit:focus {{ border: 1px solid rgba(10,122,255,0.85); }}
 #rowVal {{ font-size: 11px; color: {ACCENT}; font-weight: 600; }}
 #status {{ font-size: 11px; color: rgba(255,255,255,0.55); padding-top: 4px; }}
 QScrollArea {{ background: transparent; border: none; }}
